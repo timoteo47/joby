@@ -1,9 +1,19 @@
 import concurrent.futures
 import subprocess
 
+import click
+
 PING_COUNT = 2
 MAX_WORKERS = 256
 EXCLUDED_IPS = [56, 45, 23]
+progress_bar = None
+
+
+# number_of_ips = 0
+
+def update_progress_callback(future):
+    global progress_bar
+    progress_bar.update(1)
 
 
 def ping(ip, count):
@@ -12,21 +22,26 @@ def ping(ip, count):
 
 
 def ping_test(subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, max_workers):
+    global progress_bar
     futures = []
+    number_of_ips = (end_ip - start_ip + 1 - len(excluded_ips)) * 2
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        for i in range(start_ip, end_ip + 1):
-            if i not in excluded_ips:
-                futures.append(pool.submit(ping, "{}.{}".format(subnet_a, i), ping_count))
-                futures.append(pool.submit(ping, "{}.{}".format(subnet_b, i), ping_count))
+        with click.progressbar(length=number_of_ips,
+                               label='IPs pinged ...') as bar:
+            progress_bar = bar
+            for i in range(start_ip, end_ip + 1):
+                if i not in excluded_ips:
+                    future_a = pool.submit(ping, "{}.{}".format(subnet_a, i), ping_count)
+                    future_a.add_done_callback(update_progress_callback)
+                    futures.append(future_a)
+                    future_b = pool.submit(ping, "{}.{}".format(subnet_b, i), ping_count)
+                    future_b.add_done_callback(update_progress_callback)
+                    futures.append(future_b)
 
     results = {}
     for future in concurrent.futures.as_completed(futures):
         results[future.result()[0]] = future.result()[1]
 
-    # for ip in sorted(results.keys(), key=lambda x: tuple(map(int, x.split('.')))):
-    #     print(ip, results[ip])
-
-    # print("IP addresses on the network: ")
     count = 0
     unique_ips = []
     up_ips = []
@@ -42,13 +57,5 @@ def ping_test(subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, ma
                 unique_ips.append(ip_a)
             elif ip_a not in up_ips and ip_b in up_ips:
                 unique_ips.append(ip_b)
-    # print("{} IP address up on the network.".format(count))
+    print("{} IP address up on the network.".format(count))
     return unique_ips
-
-# start_time = time.time()
-# unique_ips = ping_test("192.168.2", "192.168.3", 1, 255, EXCLUDED_IPS)
-# print("Number of unique ips: {}".format(len(unique_ips)))
-# print("\n".join(unique_ips))
-# print("Number of unique ips: {}".format(len(unique_ips)))
-# end_time = time.time()
-# print("Time: {:10.2f}".format(end_time - start_time))
