@@ -10,6 +10,18 @@ progress_bar = None
 
 
 def update_progress_callback(future):
+    """Return state of port.
+
+    Args:
+        port (int): Number of port. None returns status of all ports. Default = None - all ports.
+
+    Returns:
+        (str): State of port(s).
+
+    Raises:
+        RuntimeError: When it fails to get the status.
+    """
+
     global progress_bar
     progress_bar.update(1)
 
