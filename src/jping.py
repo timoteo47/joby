@@ -9,32 +9,37 @@ EXCLUDED_IPS = [56, 45, 23]
 progress_bar = None
 
 
-# number_of_ips = 0
-
 def update_progress_callback(future):
     global progress_bar
     progress_bar.update(1)
 
 
 def ping(ip, count):
-    completed_process = subprocess.run(["ping", "-c", "{}".format(count), "-q", "-o", ip], capture_output=True)
+    completed_process = subprocess.run(
+        ["ping", "-c", "{}".format(count), "-q", "-o", ip], capture_output=True
+    )
     return ip, completed_process.returncode
 
 
-def ping_test(subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, max_workers):
+def ping_test(
+        subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, max_workers
+):
     global progress_bar
     futures = []
     number_of_ips = (end_ip - start_ip + 1 - len(excluded_ips)) * 2
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        with click.progressbar(length=number_of_ips,
-                               label='IPs pinged ...') as bar:
+        with click.progressbar(length=number_of_ips, label="IPs pinged ...") as bar:
             progress_bar = bar
             for i in range(start_ip, end_ip + 1):
                 if i not in excluded_ips:
-                    future_a = pool.submit(ping, "{}.{}".format(subnet_a, i), ping_count)
+                    future_a = pool.submit(
+                        ping, "{}.{}".format(subnet_a, i), ping_count
+                    )
                     future_a.add_done_callback(update_progress_callback)
                     futures.append(future_a)
-                    future_b = pool.submit(ping, "{}.{}".format(subnet_b, i), ping_count)
+                    future_b = pool.submit(
+                        ping, "{}.{}".format(subnet_b, i), ping_count
+                    )
                     future_b.add_done_callback(update_progress_callback)
                     futures.append(future_b)
 
@@ -45,7 +50,7 @@ def ping_test(subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, ma
     count = 0
     unique_ips = []
     up_ips = []
-    for ip in sorted(results.keys(), key=lambda x: tuple(map(int, x.split('.')))):
+    for ip in sorted(results.keys(), key=lambda x: tuple(map(int, x.split(".")))):
         if results[ip] == 0:
             count += 1
             up_ips.append(ip)
