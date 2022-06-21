@@ -1,78 +1,57 @@
-import concurrent.futures
-import subprocess
+import resource
+import time
 
 import click
 
-PING_COUNT = 2
-MAX_WORKERS = 256
-EXCLUDED_IPS = [56, 45, 23]
-progress_bar = None
+from jping_thread import ping_subnets
 
 
-def update_progress_callback(future):
-    """Return state of port.
-
-    Args:
-        port (int): Number of port. None returns status of all ports. Default = None - all ports.
-
-    Returns:
-        (str): State of port(s).
-
-    Raises:
-        RuntimeError: When it fails to get the status.
-    """
-
-    global progress_bar
-    progress_bar.update(1)
-
-
-def ping(ip, count):
-    completed_process = subprocess.run(
-        ["ping", "-c", "{}".format(count), "-q", "-o", ip], capture_output=True
-    )
-    return ip, completed_process.returncode
-
-
-def ping_test(
-        subnet_a, subnet_b, start_ip, end_ip, excluded_ips, ping_count, max_workers
+@click.command()
+@click.option("--subnet-a", "-a", default="192.168.2", help="First subnet to test.")
+@click.option("--subnet-b", "-b", default="192.168.3", help="Second subnet to test.")
+@click.option("--start", default=1, help="Starting IP address in subnet.")
+@click.option("--end", default=254, help="Ending IP address in subnet.")
+@click.option(
+    "--excluded-ips",
+    "-e",
+    default="",
+    help='Quoted, comma seperated list of IP addresses to be excluded. Example: -e "56, 88, 99".',
+)
+@click.option(
+    "--ping-count",
+    "-c",
+    default=5,
+    help="Number of times to attempt pinging IP address.",
+)
+@click.option(
+    "--timeout",
+    "-t",
+    default=1,
+    help="Number of times to attempt pinging IP address.",
+)
+@click.option(
+    "--debug", "-d", default=False, is_flag=True, help="Turn on debug messages."
+)
+def jping_command(
+    subnet_a, subnet_b, start, end, excluded_ips, ping_count, timeout, debug
 ):
-    global progress_bar
-    futures = []
-    number_of_ips = (end_ip - start_ip + 1 - len(excluded_ips)) * 2
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        with click.progressbar(length=number_of_ips, label="IPs pinged ...") as bar:
-            progress_bar = bar
-            for i in range(start_ip, end_ip + 1):
-                if i not in excluded_ips:
-                    future_a = pool.submit(
-                        ping, "{}.{}".format(subnet_a, i), ping_count
-                    )
-                    future_a.add_done_callback(update_progress_callback)
-                    futures.append(future_a)
-                    future_b = pool.submit(
-                        ping, "{}.{}".format(subnet_b, i), ping_count
-                    )
-                    future_b.add_done_callback(update_progress_callback)
-                    futures.append(future_b)
+    """jping - ping test two subnets."""
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    max_workers = int(3 * soft / 8)
+    print("Maximum number of ping threads = ", max_workers)
+    start_time = time.time()
+    excluded_ips_list = excluded_ips.replace(",", " ").split()
+    print("Excluded IPs = {}".format(excluded_ips_list))
+    number_of_ips = (end - start + 1 - len(excluded_ips_list)) * 2
+    print("Pinging {} IP addresses ...".format(number_of_ips))
+    unique_ips = ping_subnets(
+        subnet_a, subnet_b, start, end, excluded_ips_list, ping_count, max_workers
+    )
+    print("\n".join(unique_ips))
+    print("Number of unique IPs: {}".format(len(unique_ips)))
+    end_time = time.time()
+    print("Time: {:10.2f} seconds.".format(end_time - start_time))
 
-    results = {}
-    for future in concurrent.futures.as_completed(futures):
-        results[future.result()[0]] = future.result()[1]
 
-    count = 0
-    unique_ips = []
-    up_ips = []
-    for ip in sorted(results.keys(), key=lambda x: tuple(map(int, x.split(".")))):
-        if results[ip] == 0:
-            count += 1
-            up_ips.append(ip)
-    for i in range(start_ip, end_ip + 1):
-        if i not in excluded_ips:
-            ip_a = "{}.{}".format(subnet_a, i)
-            ip_b = "{}.{}".format(subnet_b, i)
-            if ip_a in up_ips and ip_b not in up_ips:
-                unique_ips.append(ip_a)
-            elif ip_a not in up_ips and ip_b in up_ips:
-                unique_ips.append(ip_b)
-    print("{} IP address up on the network.".format(count))
-    return unique_ips
+if __name__ == "__main__":
+    jping_command()
