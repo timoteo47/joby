@@ -15,7 +15,7 @@ def ping_thread(ip: str, ping_count: int) -> (str, bool):
 
     Returns:
         ip (str): IP address that was pinged.
-        return_code (int): Return code from the ping command. 0 is success. 2 is failure.
+        return_code (bool): Return code from the ping command. True is success. False is failure.
     """
     pings = 0
     found = False
@@ -42,15 +42,19 @@ def ping_subnets(
     max_workers: int,
 ) -> list:
     """
+    Ping device using ping3 module. Ping device ping_count times. Routine is run on its own thread.
 
-    :param subnet_a:
-    :param subnet_b:
-    :param start_ip:
-    :param end_ip:
-    :param excluded_ips:
-    :param ping_count:
-    :param max_workers:
-    :return:
+    Args:
+        subnet_a (str): First subnet to test.
+        subnet_b (str): Second subnet to test.
+        start_ip (int): 4th octet of starting IP address.
+        end_ip (int): 4th octet of ending IP address.
+        excluded_ips (list): List of 4th octets to be skipped.
+        max_workers (int): Maximum of ping worker threads.
+
+    Returns:
+        unique_ips (list): List of IP address that are only pingable from one subnet.
+
     """
     # Validate inputs
     futures = []
