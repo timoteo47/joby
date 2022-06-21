@@ -40,7 +40,7 @@ from jping_test import ping_subnets
     "--ping3", "-p", default=False, is_flag=True, help="Use ping3 module (faster)."
 )
 def jping_command(
-        subnet_a, subnet_b, start, end, excluded_ips, ping_count, quiet, ping3
+    subnet_a, subnet_b, start, end, excluded_ips, ping_count, quiet, ping3
 ):
     """jping - ping test two subnets."""
     # The maximum number of ping threads is based on the maximum number user processes.
