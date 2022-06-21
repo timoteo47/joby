@@ -55,14 +55,14 @@ def ping_thread(ip: str, ping_count: int) -> (str, bool):
 
 
 def ping_subnets(
-    subnet_a: str,
-    subnet_b: str,
-    start_ip: int,
-    end_ip: int,
-    excluded_ips: list,
-    ping_count: int,
-    max_workers: int,
-    use_subprocess: bool = False,
+        subnet_a: str,
+        subnet_b: str,
+        start_ip: int,
+        end_ip: int,
+        excluded_ips: list,
+        ping_count: int,
+        max_workers: int,
+        use_built_in: bool = True,
 ) -> List[str]:
     """
     Ping IP addresses using ping3 module. Ping device ping_count times. Routine is run on its own thread. The number of ping
@@ -76,7 +76,7 @@ def ping_subnets(
         excluded_ips (List[int]): List of 4th octets to be skipped.
         ping_count (int): Number of times to ping IP address.
         max_workers (int): Maximum of ping worker threads.
-        use_subprocess (bool): Call the built-in ping command using subprocess.
+        use_built_in (bool): Call the built-in ping command using subprocess.
 
     Returns:
         unique_ips (List[str]): List of IP address that are only pingable on one subnet.
@@ -109,7 +109,7 @@ def ping_subnets(
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
         for i in range(start_ip, end_ip + 1):
             if i not in excluded_ips:
-                if not use_subprocess:
+                if not use_built_in:
                     # Use the ping3 module to send pings because it is faster.
                     future_a = pool.submit(
                         ping_thread, "{}.{}".format(subnet_a, i), ping_count

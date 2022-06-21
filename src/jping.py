@@ -37,10 +37,10 @@ from jping_test import ping_subnets
     "--quiet", "-q", default=False, is_flag=True, help="Turn off debug messages."
 )
 @click.option(
-    "--built-in", "-b", default=False, is_flag=True, help="Use built-in ping command."
+    "--ping3", "-p", default=False, is_flag=True, help="Use ping3 module (faster)."
 )
 def jping_command(
-    subnet_a, subnet_b, start, end, excluded_ips, ping_count, quiet, built_in
+        subnet_a, subnet_b, start, end, excluded_ips, ping_count, quiet, ping3
 ):
     """jping - ping test two subnets."""
     # The maximum number of ping threads is based on the maximum number user processes.
@@ -61,7 +61,7 @@ def jping_command(
         excluded_ips_list,
         ping_count,
         max_workers,
-        use_subprocess=built_in,
+        use_built_in=not ping3,
     )
     end_time = time.time()
     if not quiet:

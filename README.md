@@ -8,18 +8,24 @@ Date: June 20, 2022
 jping is a Python script that verifies which addresses are pingable on two subnets. It returns a list of IP addresses
 that are pingable on one subnet but not the other.
 
-jping uses the ping3 module to send ICMP packets. There were two other options for sending ping packets from Python
+Three options for pinging addresses from Python were evaluated. TheThere were two other options for sending ping packets
+from Python
 
 - pythonping module: this required running jping as root to use raw sockets.
-- run ping command using subprocess: this is reliable and feature rich but slower.
+- built-in ping command using subprocess: this is reliable and feature rich but slower.
+- ping3 module with threads: very fast but occasionally misses a ping message.
 
-jping is a CLI app with options for specify the:
+Using the ping3 module and the built-in ping command were implemented. The default method is to use the built-in ping
+command.
+
+jping is a CLI app with options for specifying the:
 
 - test subnets
 - start/end IP addresses
 - number of pings to send to an address
 - maximum number of ping threads
 - list of IP addresses to be skipped based on their last octet
+- which method to use to ping addresses.
 
 The code has been tested on Python 3.8 and should work on newer versions. The code has been tested on Mac OSX and should
 also work on Linux.
@@ -52,7 +58,7 @@ Command Line Options
       -c, --ping-count INTEGER  Number of times to attempt pinging IP address.
                                 (default: 5)
       -q, --quiet               Turn off debug messages.
-      -b, --built-in            Use built-in ping command.
+      -p, --ping3               Use ping3 module (faster).
       --help                    Show this message and exit.
 
 Running Tests
