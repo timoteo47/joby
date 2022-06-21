@@ -1,9 +1,9 @@
-from src.jping_thread import ping_subnets
+from src.jping_test import ping_subnets
 
 PING_COUNT = 10
 
 
-def test_01_excluded_ips():
+def test_101_excluded_ips():
     excluded_ips = [56, 57, 58]
     subnet_a = "192.168.2"
     subnet_b = "192.168.3"
@@ -17,7 +17,7 @@ def test_01_excluded_ips():
     assert len(unique_ips_01) == 127
 
 
-def test_02_all_ips():
+def test_102_all_ips():
     excluded_ips = []
     subnet_a = "192.168.2"
     subnet_b = "192.168.3"
@@ -31,7 +31,7 @@ def test_02_all_ips():
     assert len(unique_ips_02) == 127
 
 
-def test_03_0_unique_ips():
+def test_103_0_unique_ips():
     excluded_ips = []
     subnet_a = "192.168.2"
     subnet_b = "192.168.3"
@@ -45,7 +45,7 @@ def test_03_0_unique_ips():
     assert len(unique_ips_03) == 0
 
 
-def test_04_8_unique_ips():
+def test_104_8_unique_ips():
     excluded_ips = [128]
     subnet_a = "192.168.2"
     subnet_b = "192.168.3"
